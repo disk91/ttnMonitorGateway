@@ -9,10 +9,13 @@ IFTTT_EVENT="gwMonitor"
 # Format
 # ttn_gateway_is, name diplayed on webhook, Monitoring ON/OFF, last gateway state (OK at start)
 gatewaysConf=$(cat <<-END
-eui-7276ff000805029f,kerlink-bib,ON,OK=
-eui-fcc23dfffe207d3d,lorix,ON,OK=
-laird-disk91-1,laird-home,ON,OK=
-laird-disk91-3,laird-perfect,ON,OK=
+eui-7276ff000805029f,kerlink-bib,ON,OK@
+eui-fcc23dfffe207d3d,lorix,ON,OK@
+laird-disk91-1,laird-home,ON,OK@
+laird-disk91-3,laird-perfect,ON,OK@
+eui-58a0cbfffe801791,ttig-solar,ON,OK@
+eui-3235313219004700,mikroTik-1,ON,OK@
+laird-disk91-2,laird-stock,OFF,OK@
 END
 )
 
@@ -40,7 +43,7 @@ function checkOneGateway {
 #
 # Update the gwLastState for the gwId $1 with the new state $2
 function changeGatewayStatus {
-  gateways=`echo $gateways | sed -e "s/\(^.*$1,[^,]\+,[^,]\+,\)[^,]\+\(\$.*$\)/\1$2\2/"`
+  gateways=`echo $gateways | sed -e "s/\(^.*$1,[^,]\+,[^,]\+,\)[^@]\+\(@.*$\)/\1$2\2/"`
 }
 
 #
@@ -48,7 +51,7 @@ function changeGatewayStatus {
 # Param 1 : gwName
 # Param 2 : gwLastState
 function fireIFTTT {
-   curl -d "{ \"value1\":\"$1\", \"value2\":\"$2\" }" -H "Content-Type: application/json" -X POST https://maker.ifttt.com/trigger/${IFTTT_EVENT}/with/key/${IFTTT_EVENT}
+   curl -d "{ \"value1\":\"$1\", \"value2\":\"$2\" }" -H "Content-Type: application/json" -X POST https://maker.ifttt.com/trigger/${IFTTT_EVENT}/with/key/${IFTTT_KEY} > /dev/null
 }
 
 function main {
@@ -58,15 +61,13 @@ function main {
     gateways="$gatewaysConf" 
   fi
 
-  IFS="="
-  while read -r gw ; do
-    gw="${gw}="
+  for gw in $(echo $gateways | sed "s/@/ /g"); do
     gwId=`echo $gw | cut -d "," -f 1`
     gwName=`echo $gw | cut -d "," -f 2`
     gwMonitor=`echo $gw | cut -d "," -f 3`
     gwLastState=`echo $gw | cut -d "," -f 4`
 
-    # echo ">> $gwId $gwName $gwMonitor $gwLastState ($gw)"
+    #echo ">> $gwId $gwName $gwMonitor $gwLastState ($gw)"
     if [ $gwMonitor == "ON" ] ; then
       if checkOneGateway $gwId ; then
         if [ $gwLastState == "KO" ] ; then
@@ -83,7 +84,7 @@ function main {
      fi
     fi
 
-  done <<< $gateways
+  done 
   echo $gateways > $TMPFILE
 }
 
