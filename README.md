@@ -20,7 +20,7 @@ chmod +x ./monitor.sh
 	- Eventually change the *TIMEOUT_S* in second if your gateway is not stable
 * add an entry in crontab
 ```bash 
-*/5  *  *  *  * root    /path/to/the/script/monitor.sh
+*/5  *  *  *  * root    ( cd /path/to/the/script/ ; ./monitor.sh )
 ```
 * relaunch the crond deamon
 
