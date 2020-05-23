@@ -4,7 +4,6 @@
 IFTTT_KEY="dooyqgrDt11CaVwXt-6tjO"
 IFTTT_EVENT="gwMonitor"
 
-
 # Configure the gatweays to be monitored
 # Format
 # ttn_gateway_is, name diplayed on webhook, Monitoring ON/OFF, last gateway state (OK at start)
@@ -31,6 +30,11 @@ TIMEOUT_S=900
 function checkOneGateway {
   delta=0
   d=`./ttnctl-linux-amd64 gateways status $1 | grep "Last seen" | tr -s " " | cut -d " " -f 4,5,7 | sed "s/^\(.*\)\.\(.*\) \(.*\)$/\1 \3/"`
+  if [ -z "$d" ] ; then
+   # sometime the date is invalid from the API
+   return 2
+  fi 
+
   t=`date --date="${d}" +"%s"`
   now=`date "+%s"`
   delta=`echo "$now - $t" | bc `
@@ -76,14 +80,15 @@ function main {
 	  fireIFTTT $gwName "online"
         fi
       else
-        if [ $gwLastState == "OK" ] ; then
-          changeGatewayStatus $gwId "KO"
-	  echo "gateway $gwName has stopped on `date`">> $LOGFILE
-	  fireIFTTT $gwName "offline"
+        if [ $? -eq 1 ] ; then 
+          if [ $gwLastState == "OK" ] ; then
+            changeGatewayStatus $gwId "KO"
+	    echo "gateway $gwName has stopped on `date`">> $LOGFILE
+	    fireIFTTT $gwName "offline"
+          fi
         fi
-     fi
+      fi
     fi
-
   done 
   echo $gateways > $TMPFILE
 }
