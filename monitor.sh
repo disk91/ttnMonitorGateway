@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # IFTTT API key to authenticate the use of the webhook
-IFTTT_KEY="dooyqgrDt11CaVwXt-6tjO"
+IFTTT_KEY="[your_key]"
 IFTTT_EVENT="gwMonitor"
 
 # Configure the gatweays to be monitored
